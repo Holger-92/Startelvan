@@ -3,53 +3,106 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Skapa och dela din fotbollselva online. Bygg ditt drömlag med vår interaktiva 3D-planvy.">
   <title>Fotbollselvan - Skapa din startelva</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;700;800;900&family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <main>
-    <div class="static">
-      <h1 class="js-heading">Fotbollselvan</h1>
-      <p class="js-subheading">Skapa din startelva</p>
-    </div>
-
-    <div class="js-stage stage">
-      <div class="js-world world">
-        <div class="js-terrain terrain texture">
-          <div class="field">
-            <div class="field__texture field__texture--grass"></div>
-            <div class="field__texture field__texture--gradient"></div>
-            <div class="field__texture field__texture--gradient-b"></div>
-
-            <div class="field__line field__line--outline"></div>
-            <div class="field__line field__line--mid"></div>
-            <div class="field__line field__line--circle"></div>
-
-            <div class="field__line field__line--penalty field__line--penalty--far"></div>
-            <div class="field__line field__line--goal field__line--goal--far"></div>
-            <div class="field__line field__line--penalty-arc field__line--penalty-arc--far"></div>
-
-            <div class="field__line field__line--penalty"></div>
-            <div class="field__line field__line--goal"></div>
-            <div class="field__line field__line--penalty-arc"></div>
-          </div>
+  <header class="app-header">
+    <div class="header-content">
+      <div class="header-left">
+        <h1 class="logo">Fotbollselvan</h1>
+        <span class="team-name" id="currentTeamName">Mitt Lag</span>
+      </div>
+      <nav class="header-nav">
+        <div class="user-section" id="userSection">
+          <button class="btn btn-text" id="authButton">Logga in</button>
         </div>
+      </nav>
+    </div>
+  </header>
 
-        <div class="js-team team"></div>
+  <main class="app-main">
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button class="btn btn-secondary" id="teamsButton" title="Mina lag">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          </svg>
+          <span>Mina lag</span>
+        </button>
+        <button class="btn btn-secondary" id="newTeamButton" title="Nytt lag">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12h14"></path>
+          </svg>
+          <span>Nytt lag</span>
+        </button>
+      </div>
+      <div class="toolbar-right">
+        <button class="btn btn-secondary" id="saveButton" title="Spara lag">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+            <polyline points="7 3 7 8 15 8"></polyline>
+          </svg>
+          <span>Spara</span>
+        </button>
+        <button class="btn btn-secondary" id="shareButton" title="Dela lag">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="18" cy="5" r="3"></circle>
+            <circle cx="6" cy="12" r="3"></circle>
+            <circle cx="18" cy="19" r="3"></circle>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+          </svg>
+          <span>Dela</span>
+        </button>
       </div>
     </div>
 
-    <ul class="js-team-home team-list"></ul>
+    <div class="field-container">
+      <div class="js-stage stage">
+        <div class="js-world world">
+          <div class="js-terrain terrain texture">
+            <div class="field">
+              <div class="field__texture field__texture--grass"></div>
+              <div class="field__texture field__texture--gradient"></div>
+              <div class="field__texture field__texture--gradient-b"></div>
 
-    <div class="js-switcher">
-      <a href="#" class="js-switch switch-btn">Byt sida</a>
-      <a href="#" class="js-load switch-btn">Ladda</a>
+              <div class="field__line field__line--outline"></div>
+              <div class="field__line field__line--mid"></div>
+              <div class="field__line field__line--circle"></div>
+
+              <div class="field__line field__line--penalty field__line--penalty--far"></div>
+              <div class="field__line field__line--goal field__line--goal--far"></div>
+              <div class="field__line field__line--penalty-arc field__line--penalty-arc--far"></div>
+
+              <div class="field__line field__line--penalty"></div>
+              <div class="field__line field__line--goal"></div>
+              <div class="field__line field__line--penalty-arc"></div>
+            </div>
+          </div>
+
+          <div class="js-team team"></div>
+        </div>
+      </div>
+
+      <div class="field-controls">
+        <button class="btn btn-icon" id="flipButton" title="Byt sida">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+          </svg>
+        </button>
+      </div>
     </div>
 
     <div class="js-loading loading">Laddar...</div>
   </main>
+
+  <div id="modalContainer"></div>
 
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/velocity/1.5.2/velocity.min.js"></script>
