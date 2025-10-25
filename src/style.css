@@ -16,6 +16,18 @@ body {
   background-image: -webkit-radial-gradient(ellipse, #2a437c 0, #10203b 100%);
   font-family: 'Open Sans', helvetica, arial, sans-serif;
 }
+
+body.theme-day {
+  background-image: radial-gradient(circle at 20% 0%, #3a9d6d 0%, #134b65 50%, #061b2d 100%);
+}
+
+body.theme-night {
+  background-image: radial-gradient(ellipse at center, #1c2848 0%, #050914 100%);
+}
+
+body.theme-neon {
+  background-image: radial-gradient(circle at 30% 15%, #6366f1 0%, #0f172a 55%, #020617 100%);
+}
 main {
   opacity: 0;
 }
@@ -588,4 +600,21 @@ main {
 }
 .texture .player {
   background-size: 100% auto;
+}
+
+body.theme-day .field__texture--grass {
+  filter: brightness(1.08) saturate(1.05);
+}
+
+body.theme-night .field__texture--grass {
+  filter: brightness(0.85) saturate(1.15);
+}
+
+body.theme-neon .field__texture--grass {
+  filter: saturate(1.4) brightness(0.95);
+}
+
+body.theme-neon .field__texture--gradient,
+body.theme-neon .field__texture--gradient-b {
+  opacity: 0.75;
 }

@@ -40,6 +40,12 @@
           <span>Nytt lag</span>
         </button>
       </div>
+      <div class="toolbar-center">
+        <div class="formation-indicator" aria-live="polite">
+          <span>Formation</span>
+          <strong id="formationLabel">4-3-3</strong>
+        </div>
+      </div>
       <div class="toolbar-right">
         <button class="btn btn-secondary" id="saveButton" title="Spara lag">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -101,6 +107,8 @@
 
     <div class="js-loading loading">Laddar...</div>
   </main>
+
+  <aside id="controlCenter" class="control-center" aria-label="Kontrollpanel för plan"></aside>
 
   <div id="modalContainer"></div>
 

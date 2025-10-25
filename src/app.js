@@ -368,25 +368,6 @@ function openEditDialogForPlayer($p){
         val.id = val.id || (side + '-' + key);
         $el = this.addPlayer(val);
         $team.append($el);
-        // Bind edit handlers directly on each created element so all players are editable
-        (function($node){
-          // double‑click anywhere on the player
-          $node.on('dblclick', function(e){
-            e.preventDefault();
-            openEditDialogForPlayer($node);
-          });
-          // click either the image or the small edit button or hit area
-          $node.on('click', '.player__img, .player__edit, .player__hit', function(e){
-            e.preventDefault();
-            e.stopPropagation();
-            openEditDialogForPlayer($node);
-          });
-          $node.on('click', '.player__label', function(e){
-            e.preventDefault();
-            e.stopPropagation();
-            openEditDialogForPlayer($node);
-          });
-        })($el);
       }
       $players = $('.js-player');
       $playersHome = $('.js-player[data-side="home"]');
@@ -404,7 +385,14 @@ function openEditDialogForPlayer($p){
         'data-name': data.name,
         'data-side': data.side,
         'data-x': data.x,
-        'data-y': data.y
+        'data-y': data.y,
+        'data-pos': data.pos || '',
+        'data-shirt': data.shirt || '',
+        'data-dob': data.dob || '',
+        'data-height': data.height || '',
+        'data-origin': data.origin || '',
+        'data-games': data.games != null ? data.games : '',
+        'data-goals': data.goals != null ? data.goals : ''
       });
       // Ensure forwards near the top are on top for clickability
       if (typeof data.y === 'number' && data.y <= -120) {
@@ -439,11 +427,155 @@ function openEditDialogForPlayer($p){
 
       return $el;
     },
-  persistTeams: function() {
-    try {
-      localStorage.setItem('myTeam_home', JSON.stringify(data.players.home));
-      localStorage.setItem('myTeam_away', JSON.stringify(data.players.away));
-    } catch (e) { /* ignore */ }
+    syncPlayerElement: function($el, data) {
+      if (!$el || !$el.length) { return; }
+      $el.attr({
+        'data-name': data.name,
+        'data-x': data.x,
+        'data-y': data.y,
+        'data-pos': data.pos || '',
+        'data-shirt': data.shirt || '',
+        'data-dob': data.dob || '',
+        'data-height': data.height || '',
+        'data-origin': data.origin || '',
+        'data-games': data.games != null ? data.games : '',
+        'data-goals': data.goals != null ? data.goals : ''
+      });
+      $el.data('pos', data.pos || '');
+      $el.data('dob', data.dob || '');
+      $el.data('height', data.height || '');
+      $el.data('origin', data.origin || '');
+      $el.data('games', data.games != null ? data.games : '');
+      $el.data('goals', data.goals != null ? data.goals : '');
+      $el.find('.player__label span').text(data.name || '');
+      if (typeof data.y === 'number' && data.y <= -120) {
+        $el.css('z-index', 1200);
+      } else {
+        $el.css('z-index', '');
+      }
+      var src = (String(data.asset).indexOf('http') === 0 || String(data.asset).indexOf('data:') === 0)
+        ? data.asset
+        : ASSET_URL + data.asset;
+      var $img = $el.find('.player__img img');
+      if ($img.length) {
+        $img.attr({ src: src, alt: data.name || '' });
+      }
+      var $card = $el.find('.player__card');
+      try {
+        $card.empty();
+        this.populateCard($card, data);
+      } catch (err) {
+        // ignore populate issues
+      }
+    },
+    normalizePlayerData: function(player, side) {
+      var norm = {
+        id: player.id || (side + '-' + Math.random().toString(36).slice(2, 9)),
+        side: side,
+        name: player.name || 'Spelare',
+        pos: player.pos || player.position || '',
+        shirt: player.shirt || player.shirt_number || '',
+        x: (typeof player.x === 'number') ? player.x : (typeof player.x_position === 'number' ? player.x_position : 0),
+        y: (typeof player.y === 'number') ? player.y : (typeof player.y_position === 'number' ? player.y_position : 0),
+        asset: player.asset || player.image_url || '',
+        dob: player.dob || player.date_of_birth || '',
+        height: player.height || '',
+        origin: player.origin || '',
+        games: player.games != null ? player.games : 0,
+        goals: player.goals != null ? player.goals : 0
+      };
+      return norm;
+    },
+    addPlayerFromData: function(player, side = 'home') {
+      side = side || 'home';
+      var normalized = this.normalizePlayerData(player, side);
+      var list = data.players[side];
+      if (!Array.isArray(list)) {
+        list = [];
+        data.players[side] = list;
+      }
+
+      var index = -1;
+      for (var i = 0; i < list.length; i++) {
+        if (list[i] && list[i].id === normalized.id) {
+          index = i;
+          break;
+        }
+      }
+
+      if (index > -1) {
+        list[index] = $.extend({}, list[index], normalized);
+      } else {
+        list.push(normalized);
+      }
+
+      var $existing = $team.find('.js-player[data-id="' + normalized.id + '"]');
+      if ($existing.length) {
+        this.syncPlayerElement($existing, normalized);
+      } else {
+        normalized.side = side;
+        var $el = this.addPlayer(normalized);
+        $team.append($el);
+      }
+
+      $players = $('.js-player');
+      $playersHome = $('.js-player[data-side="home"]');
+      $playersAway = $('.js-player[data-side="away"]');
+      scenes.arrangePlayers();
+      this.persistTeams();
+    },
+    clearField: function(side) {
+      var sides = [];
+      if (side) {
+        sides = [side];
+      } else {
+        sides = ['home', 'away'];
+      }
+
+      for (var i = 0; i < sides.length; i++) {
+        var key = sides[i];
+        data.players[key] = [];
+        if (key === 'home' || key === 'away') {
+          $team.find('.js-player[data-side="' + key + '"]').remove();
+        }
+      }
+
+      $players = $('.js-player');
+      $playersHome = $('.js-player[data-side="home"]');
+      $playersAway = $('.js-player[data-side="away"]');
+      this.persistTeams();
+      scenes.arrangePlayers();
+    },
+    applyFormation: function(formation, options = {}) {
+      if (!formation || !formation.positions || !formation.positions.length) { return; }
+      var side = options.side || 'home';
+      var roster = data.players[side] || [];
+      if (!roster.length) {
+        this.persistTeams();
+        return;
+      }
+      var slots = formation.positions.slice();
+      for (var i = 0; i < roster.length; i++) {
+        var slot = slots[Math.min(i, slots.length - 1)];
+        if (!slot) { continue; }
+        roster[i].x = slot.x;
+        roster[i].y = slot.y;
+        if (slot.role) {
+          roster[i].pos = slot.role;
+        }
+        var $el = $team.find('.js-player[data-id="' + roster[i].id + '"]');
+        if ($el.length) {
+          this.syncPlayerElement($el, roster[i]);
+        }
+      }
+      scenes.arrangePlayers();
+      this.persistTeams();
+    },
+    persistTeams: function() {
+      try {
+        localStorage.setItem('myTeam_home', JSON.stringify(data.players.home));
+        localStorage.setItem('myTeam_away', JSON.stringify(data.players.away));
+      } catch (e) { /* ignore */ }
   },
     preloadImages: function(preload) {
       var i, promises;
@@ -471,7 +603,12 @@ function openEditDialogForPlayer($p){
       });
     },
     populateCard: function($el, data) {
-      return $el.append('<h3>' + data.name + '</h3>' + '<ul class="player__card__list"><li><span>DOB</span><br/>' + data.dob + ' yr</li><li><span>Height</span><br/>' + data.height + '</li><li><span>Origin</span><br/>' + data.origin + '</li></ul>' + '<ul class="player__card__list player__card__list--last"><li><span>Games</span><br/>' + data.games + '</li><li><span>Goals</span><br/>' + data.goals + '</li></ul>');
+      var dob = data.dob ? (data.dob + ' yr') : '—';
+      var height = data.height || '—';
+      var origin = data.origin || '—';
+      var games = (data.games != null && data.games !== '') ? data.games : '—';
+      var goals = (data.goals != null && data.goals !== '') ? data.goals : '—';
+      return $el.append('<h3>' + data.name + '</h3>' + '<ul class="player__card__list"><li><span>DOB</span><br/>' + dob + '</li><li><span>Height</span><br/>' + height + '</li><li><span>Origin</span><br/>' + origin + '</li></ul>' + '<ul class="player__card__list player__card__list--last"><li><span>Games</span><br/>' + games + '</li><li><span>Goals</span><br/>' + goals + '</li></ul>');
     },
     displayNone: function($el) {
       return $el.css('display', 'none');
@@ -495,18 +632,20 @@ function openEditDialogForPlayer($p){
         e.preventDefault();
         return scenes.loadIn();
       });
-      $players.on('click', function(e) {
-        var $el;
+      $team.on('click', '.js-player', function(e) {
+        if ($(e.target).closest('.player__edit').length) {
+          return;
+        }
         e.preventDefault();
-        $el = $(this);
         if ($('.active').length) {
           return false;
         }
+        var $el = $(this);
         $el.addClass('active');
         scenes.focusPlayer($el);
-        return setTimeout((function() {
+        return setTimeout(function() {
           return events.attachClose();
-        }), 1);
+        }, 1);
       });
       // Add delegated double-click handler to edit player
       $team.on('dblclick', '.js-player', function(e){
