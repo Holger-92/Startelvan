@@ -170,9 +170,11 @@ export function createShareModal(shareCode) {
   return modal;
 }
 
-export function createSaveModal(currentTeam, onSave) {
+export function createSaveModal(currentTeam, onSave, options = {}) {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
+
+  const defaultFormation = options.defaultFormation || currentTeam?.formation || '4-3-3';
 
   modal.innerHTML = `
     <div class="modal-dialog modal-small">
@@ -188,7 +190,7 @@ export function createSaveModal(currentTeam, onSave) {
           </div>
           <div class="form-group">
             <label for="formation">Formation</label>
-            <input type="text" id="formation" value="${currentTeam?.formation || '4-3-3'}" placeholder="4-3-3">
+            <input type="text" id="formation" value="${defaultFormation}" placeholder="4-3-3">
           </div>
           <div class="error-message" id="saveError"></div>
           <div class="modal-footer">

@@ -1,6 +1,7 @@
 import './style.css';
 import './modern-ui.css';
 import { AuthManager, createAuthUI } from './components/auth.js';
+import { initializeControlCenter } from './components/control-center.js';
 import { createTeamsModal, createShareModal, createSaveModal } from './components/teams-modal.js';
 import { createTeam, updateTeam, getUserTeams, savePlayers, enableTeamSharing, getTeamWithPlayers } from './lib/teams.js';
 import './app.js';
@@ -9,6 +10,8 @@ window.modernApp = {
   authManager: null,
   currentTeam: null,
   currentTeamData: null,
+  controlCenter: null,
+  activeFormation: '4-3-3',
 
   async init() {
     this.authManager = new AuthManager();
@@ -20,7 +23,19 @@ window.modernApp = {
     this.setupEventListeners();
     this.checkShareCodeInURL();
 
+    this.controlCenter = initializeControlCenter({
+      onFormationSelect: (formation) => this.handleFormationSelect(formation)
+    });
+
     await this.authManager.init();
+  },
+
+  handleFormationSelect(formation) {
+    this.activeFormation = formation;
+    this.updateFormationLabel(formation);
+    if (this.currentTeam) {
+      this.currentTeam.formation = formation;
+    }
   },
 
   checkShareCodeInURL() {
@@ -78,6 +93,7 @@ window.modernApp = {
       document.getElementById('newTeamButton').disabled = true;
       document.getElementById('saveButton').disabled = true;
       document.getElementById('shareButton').disabled = true;
+      this.updateFormationLabel(this.activeFormation);
     }
   },
 
@@ -146,13 +162,16 @@ window.modernApp = {
       if (fullTeam) {
         this.currentTeam = fullTeam;
         this.updateTeamName(fullTeam.name);
+        this.activeFormation = fullTeam.formation || this.activeFormation;
+        this.updateFormationLabel(this.activeFormation);
+        this.controlCenter?.setFormation(this.activeFormation, { suppressApply: true });
         this.loadPlayersToField(fullTeam.players);
       }
     }
   },
 
   async createNewTeam() {
-    const { data: team, error } = await createTeam();
+    const { data: team, error } = await createTeam(undefined, this.activeFormation);
 
     if (error || !team) {
       alert('Kunde inte skapa nytt lag');
@@ -161,6 +180,9 @@ window.modernApp = {
 
     this.currentTeam = team;
     this.updateTeamName(team.name);
+    this.activeFormation = team.formation || this.activeFormation;
+    this.updateFormationLabel(this.activeFormation);
+    this.controlCenter?.setFormation(this.activeFormation);
 
     if (window.__fe && window.__fe.dom && window.__fe.dom.clearField) {
       window.__fe.dom.clearField();
@@ -171,6 +193,9 @@ window.modernApp = {
     this.currentTeam = isShared ? null : team;
     this.currentTeamData = team;
     this.updateTeamName(team.name);
+    this.activeFormation = team.formation || this.activeFormation;
+    this.updateFormationLabel(this.activeFormation);
+    this.controlCenter?.setFormation(this.activeFormation, { suppressApply: true });
 
     if (team.players) {
       this.loadPlayersToField(team.players);
@@ -182,6 +207,10 @@ window.modernApp = {
 
     setTimeout(() => {
       const app = window.__fe;
+
+      if (app.dom && app.dom.clearField) {
+        app.dom.clearField('home');
+      }
 
       players.forEach(player => {
         const playerData = {
@@ -210,6 +239,13 @@ window.modernApp = {
     document.getElementById('currentTeamName').textContent = name || 'Mitt Lag';
   },
 
+  updateFormationLabel(formation) {
+    const label = document.getElementById('formationLabel');
+    if (label) {
+      label.textContent = formation || '4-3-3';
+    }
+  },
+
   async saveCurrentTeam() {
     const players = this.getCurrentPlayers();
 
@@ -219,6 +255,16 @@ window.modernApp = {
     }
 
     if (this.currentTeam) {
+      const { data: updatedTeam, error: teamError } = await updateTeam(this.currentTeam.id, { formation: this.activeFormation });
+      if (teamError) {
+        alert('Kunde inte uppdatera lagets formation');
+        return;
+      }
+
+      if (updatedTeam) {
+        this.currentTeam = { ...this.currentTeam, ...updatedTeam };
+      }
+
       const { error } = await savePlayers(this.currentTeam.id, players);
 
       if (error) {
@@ -229,7 +275,8 @@ window.modernApp = {
       alert('Laget har uppdaterats!');
     } else {
       const modal = createSaveModal(null, async (name, formation) => {
-        const { data: team, error: teamError } = await createTeam(name, formation);
+        const desiredFormation = formation || this.activeFormation;
+        const { data: team, error: teamError } = await createTeam(name, desiredFormation);
 
         if (teamError || !team) {
           return { success: false, error: 'Kunde inte skapa lag' };
@@ -242,11 +289,14 @@ window.modernApp = {
         }
 
         this.currentTeam = team;
+        this.activeFormation = team.formation || desiredFormation;
+        this.updateFormationLabel(this.activeFormation);
+        this.controlCenter?.setFormation(this.activeFormation, { suppressApply: true });
         this.updateTeamName(team.name);
         alert('Laget har sparats!');
 
         return { success: true };
-      });
+      }, { defaultFormation: this.activeFormation });
 
       document.getElementById('modalContainer').appendChild(modal);
     }
@@ -262,6 +312,16 @@ window.modernApp = {
     if (!players || players.length === 0) {
       alert('Lägg till spelare på planen först');
       return;
+    }
+
+    const { data: updatedTeam, error: teamError } = await updateTeam(this.currentTeam.id, { formation: this.activeFormation });
+    if (teamError) {
+      alert('Kunde inte uppdatera lagets formation');
+      return;
+    }
+
+    if (updatedTeam) {
+      this.currentTeam = { ...this.currentTeam, ...updatedTeam };
     }
 
     await savePlayers(this.currentTeam.id, players);
